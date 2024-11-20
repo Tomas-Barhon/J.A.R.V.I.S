@@ -1,10 +1,10 @@
 """Speech to text module for Jarvis"""
 import speech_recognition as sr
-
+from helper_functions import save_audio_file
 
 class Speech_Recognition:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, debug = False) -> None:
+        self.debug = debug
 
     def transcribe_input(self, speech_recognizer):
         with sr.Microphone(device_index = 0) as source2:
@@ -16,11 +16,11 @@ class Speech_Recognition:
             #listens for the user's input 
             audio2 = speech_recognizer.listen(source2)
             
-            #saving as file for debugging
-            #with open("audio_file.wav", "wb") as file:
-            #    file.write(audio2.get_wav_data())
-
-            # Using google to recognize audio
+            #if debug save file
+            if self.debug:
+                save_audio_file(audio2)
+            
+            # Using google recognizer for now
             MyText = speech_recognizer.recognize_google(audio2)
             MyText = MyText.lower()
         return MyText
