@@ -2,7 +2,7 @@
 import speech_recognition as sr
 from helper_functions import save_audio_file
 
-class Speech_Recognition:
+class SpeechRecognition:
     def __init__(self, debug = False) -> None:
         self.debug = debug
 

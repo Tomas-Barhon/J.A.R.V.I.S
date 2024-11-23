@@ -1,33 +1,24 @@
 from ctypes import *
 import speech_recognition as sr
-from speech_to_text import Speech_Recognition
+from speech_to_text import SpeechRecognition
+from text_to_speech import TextToSpeach
 from brain import JARVIS
-
-
-LISTEN = True
 
 def py_error_handler(filename, line, function, err, fmt):
     pass
-def disable_libasound_warnings():
-    """Disabling audio warnings
-    Credit to "https://blog.yjl.im/2012/11/pyaudio-portaudio-and-alsa-messages.html" for solving the warnings
-"""
-    ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
-    c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
-    asound = cdll.LoadLibrary('libasound.so')
-    asound.snd_lib_error_set_handler(c_error_handler)
+
+LISTEN = True
 
 def main():
     """
     Main loop waiting for speech input.
     """
 
-    speech_recognition = Speech_Recognition()
+    speech_recognition = SpeechRecognition()
     recognizer = sr.Recognizer()
     jarvis = JARVIS()
-
+    text_to_speach = TextToSpeach()
     while(True):
-        
         try:
             if LISTEN:
                 user_input = speech_recognition.transcribe_input(recognizer)
@@ -36,6 +27,8 @@ def main():
                     messages = [JARVIS.DEFAULT_SYSTEM_PROMPT,
                 {"role": "user", "content": user_input}]
                 )
+                
+                text_to_speach.speak(response)
                 print(response)
         except sr.RequestError as e:
             print(e)
@@ -44,5 +37,11 @@ def main():
             print(e)
 
 if __name__ == "__main__":
-    disable_libasound_warnings()
+    """Disabling audio warnings
+    Credit to "https://blog.yjl.im/2012/11/pyaudio-portaudio-and-alsa-messages.html" for solving the warnings
+"""
+    ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+    c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+    asound = cdll.LoadLibrary('libasound.so')
+    asound.snd_lib_error_set_handler(c_error_handler)
     main()
