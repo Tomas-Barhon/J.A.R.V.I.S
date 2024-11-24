@@ -12,6 +12,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
+from langgraph.prebuilt import create_react_agent
 import time
 class JARVIS:
     API_REQUEST_LIMIT = 10
@@ -27,7 +28,7 @@ class JARVIS:
         #load .env variables
         load_dotenv()
         self.open_ai_client = ChatOpenAI(model=model,
-                                         api_key=os.getenv("OPENAI_API_KEY"))
+                                         api_key=os.getenv("OPENAI_API_KEY"),temperature=0)
 
         self.langchain_graph = StateGraph(state_schema=MessagesState)
         self.langchain_graph.add_edge(START, "model")
@@ -44,8 +45,11 @@ class JARVIS:
     ]
 )
         self.chain = self.prompt | self.open_ai_client
-        
+        self.agent = create_react_agent(self.chain, tools=self.get_tools())
         self.start_time = time.time()
+
+    def get_tools(self):
+        ...
 
     def reset_requests(self):
         """Resets the request count after a minute has passed."""
@@ -77,6 +81,10 @@ class JARVIS:
         if JARVIS.API_REQUESTS_PM <= JARVIS.API_REQUEST_LIMIT:
             input_messages = [HumanMessage(messages)]
             output = self.app.invoke({"messages": input_messages}, config)
+            state = self.app.get_state(config).values
+
+            for message in state["messages"]:
+                message.pretty_print()
             return output["messages"][-1].content.strip()
         else:
             return f"""Limit of {JARVIS.API_REQUEST_LIMIT}

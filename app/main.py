@@ -34,7 +34,6 @@ def main():
                 )
                 
                 text_to_speach.speak(response)
-                print(response)
         except sr.RequestError as e:
             print(e)
             
