@@ -4,27 +4,49 @@ Returns:
     _type_: _description_
 """
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from dotenv import load_dotenv
-from openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import START, MessagesState, StateGraph
 import time
 class JARVIS:
     API_REQUEST_LIMIT = 10
     API_REQUESTS_PM = 0
-    DEFAULT_SYSTEM_PROMPT : Dict = {
-    "role": "system",
-    "content": (
-        "You are J.A.R.V.I.S., a sophisticated AI assistant from the Iron Man universe. "
+    DEFAULT_SYSTEM_PROMPT : Tuple = (
+            "system",
+            "You are J.A.R.V.I.S., a sophisticated AI assistant from the Iron Man universe. "
         "You respond in a polite, articulate, and formal tone, offering intelligent insights "
-        "and practical assistance while maintaining a composed and witty demeanor."
-    )
-}
+        "and practical assistance while maintaining a composed and witty demeanor.",
+        )
     
-    def __init__(self) -> None:
+    def __init__(self, model :str = "gpt-3.5-turbo-1106") -> None:
         #load .env variables
         load_dotenv()
-        self.open_ai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.open_ai_client = ChatOpenAI(model=model,
+                                         api_key=os.getenv("OPENAI_API_KEY"))
+
+        self.langchain_graph = StateGraph(state_schema=MessagesState)
+        self.langchain_graph.add_edge(START, "model")
+        self.langchain_graph.add_node("model", self.call_model)
+
+        # Add memory
+        self.chat_memory = MemorySaver()
+        self.app = self.langchain_graph.compile(checkpointer=self.chat_memory)
+        
+        self.prompt = ChatPromptTemplate.from_messages(
+    [
+        JARVIS.DEFAULT_SYSTEM_PROMPT,
+        MessagesPlaceholder(variable_name="messages"),
+    ]
+)
+        self.chain = self.prompt | self.open_ai_client
+        
         self.start_time = time.time()
+
     def reset_requests(self):
         """Resets the request count after a minute has passed."""
         current_time = time.time()
@@ -32,8 +54,13 @@ class JARVIS:
         if elapsed_time >= 60:
             JARVIS.API_REQUESTS_PM = 0
             self.start_time = current_time
+    
+    def call_model(self, state: MessagesState):
+        response = self.chain.invoke(state["messages"])
+        # Update message history with response:
+        return {"messages": response}
 
-    def send_prompt(self, messages: List[Dict[str,str]],model :str = "gpt-4o-mini") -> None:
+    def send_prompt(self, messages: str, config: dict) -> None:
         """Sends messages to the OpenAi model based on specification.
 
         Args:
@@ -46,16 +73,11 @@ class JARVIS:
         #Check whether to reset requests per minute
         self.reset_requests()
         
-        
         JARVIS.API_REQUESTS_PM += 1
         if JARVIS.API_REQUESTS_PM <= JARVIS.API_REQUEST_LIMIT:
-            request = self.open_ai_client.chat.completions.create(
-                model=model,
-                messages=messages
-            )
-            return request.choices[0].message.content.strip()
+            input_messages = [HumanMessage(messages)]
+            output = self.app.invoke({"messages": input_messages}, config)
+            return output["messages"][-1].content.strip()
         else:
             return f"""Limit of {JARVIS.API_REQUEST_LIMIT}
         requests per minute has been reached."""
-
-
