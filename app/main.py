@@ -20,6 +20,7 @@ def main():
     recognizer = sr.Recognizer()
     jarvis = JARVIS()
     text_to_speach = TextToSpeach()
+    #thread_id identifying my conversation
     config = {"configurable": {"thread_id": "tomas_test"}}
 
 
@@ -27,13 +28,16 @@ def main():
         try:
             print("J.A.R.V.I.S. started")
             if LISTEN:
-                user_input = speech_recognition.transcribe_input(recognizer)
-                print("Received user input: ",user_input)
+                #user_input = speech_recognition.transcribe_input(recognizer)
+                #print("Received user input: ",user_input)
+                # response = jarvis.send_prompt(
+                #     messages = user_input, config = config
+                # )
                 response = jarvis.send_prompt(
-                    messages = user_input, config = config
+                messages = "Hey, do you know something about Barack Obama?", config = config
                 )
-                
                 text_to_speach.speak(response)
+                break
         except sr.RequestError as e:
             print(e)
             
@@ -41,6 +45,7 @@ def main():
             print(e)
 
 if __name__ == "__main__":
+    #Error handler supressing libasound warnings from WSL
     ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
     c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
     asound = cdll.LoadLibrary('libasound.so')
