@@ -1,6 +1,6 @@
 def save_audio_file(audio):
     """
-    Saves 
+    Saves audio data to a file for debugging purposes.
     
     """
     with open("audio_file.wav", "wb") as file:

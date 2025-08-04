@@ -1,9 +1,11 @@
 from ctypes import *
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import speech_recognition as sr
-from speech_to_text import SpeechRecognition
-from text_to_speech import TextToSpeach
-from brain import JARVIS
-
+from src.speech.speech_to_text import SpeechRecognition
+from src.speech.text_to_speech import TextToSpeach
+from src.agents.jarvis import JARVIS
 def py_error_handler(filename, line, function, err, fmt):
     """Disabling audio warnings
         Credit to "https://blog.yjl.im/2012/11/pyaudio-portaudio-and-alsa-messages.html" for solving the warnings
@@ -38,6 +40,7 @@ def main():
                 )
                 text_to_speach.speak(response)
                 break
+
         except sr.RequestError as e:
             print(e)
             

@@ -1,6 +1,6 @@
 """Speech to text module for Jarvis"""
 import speech_recognition as sr
-from helper_functions import save_audio_file
+from src.helpers.helper_functions import save_audio_file
 
 class SpeechRecognition:
     def __init__(self, debug = False) -> None:
